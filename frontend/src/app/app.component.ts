@@ -8,6 +8,8 @@ import {FireService} from "./fire.service";
 })
 export class AppComponent {
   sendThisMessage: any;
+  email: string = "";
+  password: string = "";
 
   constructor(public fireService: FireService) {
 

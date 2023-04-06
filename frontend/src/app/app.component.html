@@ -1,7 +1,29 @@
-<input [(ngModel)]="sendThisMessage">
 
-<button (click)="fireService.sendMessage(sendThisMessage)">send message</button>
+<div *ngIf="fireService.auth.currentUser==null" >
+  <input placeholder="email" [(ngModel)]="email" type="email">
+  <input placeholder="password" [(ngModel)]="password" type="password">
+  <br>
+  <button (click)="fireService.signIn(email, password)">Sign in</button>
+  <button (click)="fireService.register(email, password)">Sign up</button>
+</div>
 
-<p *ngFor="let m of fireService.messages">
-  {{m | json}}
-</p>
+
+
+<div *ngIf="fireService.auth.currentUser">
+
+  <h1>welcome, {{fireService.auth.currentUser.email}}
+  <button (click)="fireService.signOut()" >sign out</button>
+    <img (click)="fileInput.click()" style="max-height: 60px;" [src]="fireService.currentlySignedInUserAvatarURL">
+    <input (change)="fireService.updateUserImage($event)" hidden #fileInput type="file">
+  </h1>
+  <input [(ngModel)]="sendThisMessage">
+
+  <button (click)="fireService.sendMessage(sendThisMessage)">send message</button>
+
+  <p *ngFor="let m of fireService.messages">
+    {{m | json}}
+
+
+  </p>
+
+</div>
