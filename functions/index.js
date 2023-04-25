@@ -1,11 +1,18 @@
 const functions = require("firebase-functions");
+const admin = require('firebase-admin');
+admin.initializeApp({projectId: 'fstack23'})
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+exports.authTriggeredFunction = functions.auth
+    .user()
+    .onCreate((user, context) => {
+        admin.firestore().collection('user').doc(user.uid)
+            .set({
+                name: user.displayName
+            })
+    })
 
+exports.firestoreTriggeredFunction = functions.firestore
+    .document('chat/{document}')
+    .onCreate((snapshot, context) => {
 
-
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  functions.logger.info("Hello logs!", {structuredData: true});
-  response.send("Hello from Firebase!");
-});
+    })
