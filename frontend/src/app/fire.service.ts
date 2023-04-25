@@ -6,6 +6,8 @@ import 'firebase/compat/storage'
 
 import * as config from '../../firebaseconfig.js'
 
+import axios from 'axios';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -16,7 +18,7 @@ export class FireService {
   auth: firebase.auth.Auth;
   storage: firebase.storage.Storage;
   currentlySignedInUserAvatarURL: string = "https://wbi.net.au/wp-content/uploads/2019/04/person-icon-silhouette-png-12-1-e1555982192147.png";
-
+  baseUrl: string = "http://127.0.0.1:5001/fstack23/us-central1/api/";
   messages: any[] = [];
 
   constructor() {
@@ -24,6 +26,11 @@ export class FireService {
     this.firestore = firebase.firestore();
     this.auth = firebase.auth();
     this.storage = firebase.storage();
+
+    this.auth.useEmulator('http://localhost:9099');
+    this.firestore.useEmulator('localhost', 8080);
+    this.storage.useEmulator('localhost', 9199);
+
     this.auth.onAuthStateChanged((user) => {
       if(user) {
         this.getMessages();
@@ -53,18 +60,21 @@ export class FireService {
   sendMessage(sendThisMessage: any) {
     let messageDTO: MessageDTO = {
       messageContent: sendThisMessage,
-      timestamp: new Date(),
-      user: 'some user'
+      user: this.auth.currentUser?.uid+""
     }
-    this.firestore
+    axios.post(this.baseUrl+'message', messageDTO).then(success => {
+      console.log(success.data);
+    }).catch(err => {
+      console.log(err);
+    })
+    /*this.firestore
       .collection('myChat')
-      .add(messageDTO);
+      .add(messageDTO);*/
   }
 
    getMessages() {
    this.firestore
-      .collection('myChat')
-     .where('user', '==', 'some user')
+      .collection('chat')
       .onSnapshot(snapshot => {
         snapshot.docChanges().forEach(change => {
           if(change.type=="added") {
@@ -98,6 +108,6 @@ export class FireService {
 
 export interface MessageDTO {
   messageContent: string;
-  timestamp: Date;
+  timestamp?: Date;
   user: string;
 }

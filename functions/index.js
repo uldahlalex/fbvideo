@@ -2,17 +2,46 @@ const functions = require("firebase-functions");
 const admin = require('firebase-admin');
 admin.initializeApp({projectId: 'fstack23'})
 
-exports.authTriggeredFunction = functions.auth
-    .user()
-    .onCreate((user, context) => {
-        admin.firestore().collection('user').doc(user.uid)
-            .set({
-                name: user.displayName
-            })
-    })
+const app = require('express')();
+const cors = require('cors');
+app.use(cors());
 
-exports.firestoreTriggeredFunction = functions.firestore
-    .document('chat/{document}')
-    .onCreate((snapshot, context) => {
+const toxicity = require('@tensorflow-models/toxicity');
 
+
+const isThisMessageAllRight = async (message) => {
+    const model = await toxicity.load(0.9);
+    const predicions = await model.classify(message);
+    let whatsWrongWithMessage = [];
+
+    predicions.forEach(prediction => {
+        prediction.results.forEach(result => {
+            if (result.match) {
+                whatsWrongWithMessage.push(prediction.label);
+            }
+        })
     })
+    return whatsWrongWithMessage;
+}
+
+app.post('/message', async (req, res) => {
+    const body = req.body;
+    const result = await isThisMessageAllRight(body.messageContent);
+
+    if(result.length===0) {
+        body.timestamp = new Date();
+        const writeresult =
+            await admin.firestore().collection('chat').add(body);
+        return res.status(201).json(writeresult);
+    }
+    return res.status(400).json(
+        {
+            message: "you're being toxic",
+            results: result
+        }
+    )
+})
+
+
+exports.api = functions.https.onRequest(app);
+
