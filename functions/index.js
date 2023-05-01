@@ -8,6 +8,16 @@ app.use(cors());
 
 const toxicity = require('@tensorflow-models/toxicity');
 
+const validateFirebaseIdToken = async (req, res, next) => {
+    try {
+        const token = req.headers?.authorization;
+        functions.logger.log(token)
+        req.user = await admin.auth().verifyIdToken(token);
+        return next();
+    } catch (error) {
+        return res.status(403).json(error);
+    }
+}
 
 const isThisMessageAllRight = async (message) => {
     const model = await toxicity.load(0.9);
@@ -24,7 +34,7 @@ const isThisMessageAllRight = async (message) => {
     return whatsWrongWithMessage;
 }
 
-app.post('/message', async (req, res) => {
+app.post('/message', validateFirebaseIdToken, async (req, res) => {
     const body = req.body;
     const result = await isThisMessageAllRight(body.messageContent);
 

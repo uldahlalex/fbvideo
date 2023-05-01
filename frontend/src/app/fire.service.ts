@@ -35,10 +35,20 @@ export class FireService {
       if(user) {
         this.getMessages();
         this.getImageOfSignedInUser();
+        this.intercept();
       }
     })
 
 
+  }
+
+  intercept() {
+    axios.interceptors
+      .request
+      .use(async (request) => {
+        request.headers.Authorization = await this.auth.currentUser?.getIdToken() + ""
+        return request;
+      });
   }
 
   async getImageOfSignedInUser() {
@@ -67,9 +77,7 @@ export class FireService {
     }).catch(err => {
       console.log(err);
     })
-    /*this.firestore
-      .collection('myChat')
-      .add(messageDTO);*/
+
   }
 
    getMessages() {
