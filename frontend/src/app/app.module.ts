@@ -12,7 +12,7 @@ import { IonicModule } from '@ionic/angular';
   imports: [
     BrowserModule,
     FormsModule,
-    IonicModule.forRoot()
+    IonicModule.forRoot({mode: "ios"})
   ],
   providers: [],
   bootstrap: [AppComponent]

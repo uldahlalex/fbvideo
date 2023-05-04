@@ -14,4 +14,8 @@ export class AppComponent {
   constructor(public fireService: FireService) {
 
   }
+
+  signout() {
+
+  }
 }

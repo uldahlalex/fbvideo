@@ -7,6 +7,7 @@ import 'firebase/compat/storage'
 import * as config from '../../firebaseconfig.js'
 
 import axios from 'axios';
+import {ToastController} from "@ionic/angular";
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,7 @@ export class FireService {
   baseUrl: string = "http://127.0.0.1:5001/fstack23/us-central1/api/";
   messages: any[] = [];
 
-  constructor() {
+  constructor(private toastController: ToastController) {
     this.firebaseApplication = firebase.initializeApp(config.firebaseconfig);
     this.firestore = firebase.firestore();
     this.auth = firebase.auth();
@@ -68,14 +69,29 @@ export class FireService {
   }
 
   sendMessage(sendThisMessage: any) {
-    let messageDTO: MessageDTO = {
+    let messageDTO = {
       messageContent: sendThisMessage,
-      user: this.auth.currentUser?.uid+""
+      user: this.auth.currentUser?.uid+"",
+      timestamp: new Date(),
+      id: (Math.random() + 1).toString(20).substring(2,15)
     }
+      this.messages.push({...messageDTO, hasNotBeenThroughToxicityFilterYet : true});
+
     axios.post(this.baseUrl+'message', messageDTO).then(success => {
-      console.log(success.data);
+      this.toastController.create({
+        message: 'your message has been received successfully',
+        color: 'success'
+      }).then(res => {
+        res.present();
+      })
     }).catch(err => {
-      console.log(err);
+      this.messages = this.messages.filter(m => m.id != messageDTO.id)
+      this.toastController.create({
+        message: 'your message was rejected',
+        color: "danger"
+      }).then(res => {
+        res.present()
+      })
     })
 
   }
@@ -86,7 +102,15 @@ export class FireService {
       .onSnapshot(snapshot => {
         snapshot.docChanges().forEach(change => {
           if(change.type=="added") {
-            this.messages.push({id: change.doc.id, data: change.doc.data()});
+            const index = this.messages.findIndex(m => m.id == change.doc.id)
+            if(index == -1) {
+              this.messages.unshift(change.doc.data());
+            } else  {
+              this.messages[index].hasNotBeenThroughToxicityFilterYet = false;
+            }
+
+
+
           } if (change.type=='modified') {
             const index = this.messages.findIndex(document => document.id != change.doc.id);
             this.messages[index] =
@@ -112,10 +136,4 @@ export class FireService {
     }
 
 
-}
-
-export interface MessageDTO {
-  messageContent: string;
-  timestamp?: Date;
-  user: string;
 }

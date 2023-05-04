@@ -11,8 +11,7 @@ const toxicity = require('@tensorflow-models/toxicity');
 const validateFirebaseIdToken = async (req, res, next) => {
     try {
         const token = req.headers?.authorization;
-        functions.logger.log(token)
-        req.user = await admin.auth().verifyIdToken(token);
+        await admin.auth().verifyIdToken(token);
         return next();
     } catch (error) {
         return res.status(403).json(error);
@@ -39,9 +38,10 @@ app.post('/message', validateFirebaseIdToken, async (req, res) => {
     const result = await isThisMessageAllRight(body.messageContent);
 
     if(result.length===0) {
-        body.timestamp = new Date();
         const writeresult =
-            await admin.firestore().collection('chat').add(body);
+            await admin.firestore().collection('chat')
+                .doc(body.id)
+                .set(body);
         return res.status(201).json(writeresult);
     }
     return res.status(400).json(
